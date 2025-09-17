@@ -1,5 +1,5 @@
 from passlib.context import CryptContext
-from schemas.users_schemas import UserInDB
+from schemas.users_schemas import UserInDB, UserUpdate
 from fastapi import Depends
 from dependencies import get_db
 
@@ -41,6 +41,12 @@ class UserService:
         self.db[user.username] = user.model_dump()
         return user
 
+    def update_user(self, user: UserInDB, user_update: UserUpdate):
+        user_update = user_update.model_dump(exclude_unset=True)
+        for key, value in user_update.items():
+            self.db[user.username][key] = value
+        return self.db[user.username]
+
     def process_google_login(self, user_info: dict):
 
         user = self.get_user(user_info['email'])
@@ -55,6 +61,14 @@ class UserService:
                 hashed_password='testing-password',
             )
             self.create_user(user)
+        else:
+            user_update = UserUpdate(
+                full_name=user.full_name or user_info['name'] ,
+                given_name=user.given_name or user_info['given_name'] ,
+                family_name=user.family_name or user_info['family_name'] ,
+                picture=user.picture or user_info['picture'],
+            )
+            self.update_user(user, user_update)
         return user
 
 # ==================== DEPENDENCY INJECTION ====================

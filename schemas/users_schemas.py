@@ -12,3 +12,9 @@ class User(BaseModel):
 
 class UserInDB(User):
     hashed_password: str
+
+class UserUpdate(BaseModel):
+    full_name: str | None = None
+    given_name: str | None = None
+    family_name: str | None = None
+    picture: str | None = None
