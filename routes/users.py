@@ -6,6 +6,11 @@ from services.users_services import UserService, get_user_service
 
 users_router = APIRouter(prefix="/users")
 
+@users_router.get("/")
+async def get_all_users(
+    user_service: UserService = Depends(get_user_service)
+):
+    return user_service.get_all_users()
 
 @users_router.get("/me/", response_model=User)
 async def read_users_me(
@@ -13,16 +18,15 @@ async def read_users_me(
 ):
     return current_user
 
-
 @users_router.get("/me/items/")
 async def read_own_items(
     current_user: Annotated[User, Depends(get_current_active_user)],
 ):
     return [{"item_id": "Foo", "owner": current_user.username}]
 
-
-@users_router.get("/")
-async def get_all_users(
-    user_service: UserService = Depends(get_user_service)
+@users_router.get("/{email}/")
+async def get_user_by_email(
+    email: str,
+    user_service: UserService = Depends(get_user_service),
 ):
-    return user_service.get_all_users()
+    return user_service.get_user_by_email(email)

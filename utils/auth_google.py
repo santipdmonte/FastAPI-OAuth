@@ -28,9 +28,7 @@ async def login_via_google(request: Request):
 async def callback_via_google(request: Request, user_service: UserService = Depends(get_user_service)):
     token = await oauth.google.authorize_access_token(request)
 
-    print(token['userinfo'])
-
-    user_service.process_google_login(token)
+    user_service.process_google_login(token['userinfo'])
 
     return Token(access_token=token['access_token'], token_type="bearer")
     # return token

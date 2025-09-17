@@ -44,7 +44,7 @@ class UserService:
 
     def get_user_by_email(self, email: str):
         for user in self.db.values():
-            if user.email == email:
+            if user['email'] == email:
                 return UserInDB(**user)
         return None
 
@@ -63,6 +63,11 @@ class UserService:
                 username=user_info['email'],
                 email=user_info['email'],
                 full_name=user_info['name'],
+                given_name=user_info['given_name'],
+                family_name=user_info['family_name'],
+                email_verified=user_info['email_verified'],
+                picture=user_info['picture'],
+                hashed_password='testing-password',
             )
             self.create_user(user)
         return user
