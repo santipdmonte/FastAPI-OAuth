@@ -1,7 +1,7 @@
 from fastapi import Depends, APIRouter
 from typing import Annotated
 from utils.jwt_utils import get_current_active_user
-from schemas.users_schemas import User, UserUpdate
+from schemas.users_schemas import User, UserUpdate, UserCreate
 from services.users_services import UserService, get_user_service
 
 users_router = APIRouter(prefix="/users")
@@ -11,6 +11,13 @@ async def get_all_users(
     user_service: UserService = Depends(get_user_service)
 ):
     return user_service.get_all_users()
+
+@users_router.post("/")
+async def create_user(
+    user: UserCreate,
+    user_service: UserService = Depends(get_user_service)
+):
+    return user_service.create_user(user)
 
 @users_router.get("/me/", response_model=User)
 async def read_users_me(

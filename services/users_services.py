@@ -1,5 +1,5 @@
 from passlib.context import CryptContext
-from schemas.users_schemas import UserInDB, UserUpdate
+from schemas.users_schemas import UserInDB, UserUpdate, UserCreate
 from fastapi import Depends
 from dependencies import get_db
 
@@ -29,6 +29,13 @@ class UserService:
 
     # ==================== USER METHODS ====================
 
+    def create_user(self, user: UserCreate):
+        self.db[user.username] = UserInDB(
+            username=user.username,
+            hashed_password=self.get_password_hash(user.password),
+        ).model_dump()
+        return user
+    
     def get_user(self, username: str):
         if username in self.db:
             user_dict = self.db[username]
@@ -36,10 +43,6 @@ class UserService:
 
     def get_all_users(self):
         return list(self.db.values())
-
-    def create_user(self, user: UserInDB):
-        self.db[user.username] = user.model_dump()
-        return user
 
     def update_user(self, user: UserInDB, user_update: UserUpdate):
         user_update = user_update.model_dump(exclude_unset=True)
@@ -59,7 +62,7 @@ class UserService:
                 email_verified=user_info['email_verified'],
                 picture=user_info['picture'],
             )
-            self.create_user(user)
+            self._create_user_sso(user)
         else:
             user_update = UserUpdate(
                 full_name=user.full_name or user_info['name'] ,
@@ -68,6 +71,10 @@ class UserService:
                 picture=user.picture or user_info['picture'],
             )
             self.update_user(user, user_update)
+        return user
+
+    def _create_user_sso(self, user: UserInDB):
+        self.db[user.username] = user.model_dump()
         return user
 
 # ==================== DEPENDENCY INJECTION ====================
