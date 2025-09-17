@@ -1,7 +1,7 @@
 from starlette.requests import Request
 from fastapi import APIRouter
 from authlib.integrations.starlette_client import OAuth
-from utils.auth import Token
+from utils.auth_utils import Token
 import os
 from services.users_services import UserService, get_user_service
 from fastapi import Depends

@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from typing import Annotated
 from fastapi.security import OAuth2PasswordRequestForm
-from utils.auth import Token, create_access_token
+from utils.auth_utils import Token, create_access_token
 from services.users_services import get_user_service
 from dependencies import get_db
 from datetime import timedelta
