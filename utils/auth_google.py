@@ -4,7 +4,7 @@ from authlib.integrations.starlette_client import OAuth
 import os
 
 
-auth_google_router = APIRouter(prefix="/google")
+auth_google_router = APIRouter(prefix="/auth/google")
 oauth = OAuth()
 oauth.register(
     name='google',
@@ -18,11 +18,12 @@ oauth.register(
 
 @auth_google_router.get("/login")
 async def login_via_google(request: Request):
-    redirect_uri = request.url_for('auth_via_google')
+    redirect_uri = request.url_for('callback_via_google')
     return await oauth.google.authorize_redirect(request, redirect_uri)
 
-@auth_google_router.get("/auth")
-async def auth_via_google(request: Request):
+@auth_google_router.get("/callback")
+async def callback_via_google(request: Request):
     token = await oauth.google.authorize_access_token(request)
-    user = token['userinfo']
-    return dict(user)
+    return token
+    # user = token['userinfo']
+    # return dict(user)
