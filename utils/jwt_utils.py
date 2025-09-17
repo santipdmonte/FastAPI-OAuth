@@ -7,7 +7,10 @@ import jwt
 from jwt.exceptions import InvalidTokenError
 from fastapi import status
 import os
-from services.users_services import TokenData
+from pydantic import BaseModel
+
+class TokenData(BaseModel):
+    username: str | None = None
 
 SECRET_KEY = os.getenv("SECRET_KEY")
 ALGORITHM = os.getenv("ALGORITHM")

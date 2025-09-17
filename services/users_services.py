@@ -1,15 +1,7 @@
-from pydantic import BaseModel
 from passlib.context import CryptContext
 from schemas.users_schemas import UserInDB
-import os
 from fastapi import Depends
 from dependencies import get_db
-
-SECRET_KEY = os.getenv("SECRET_KEY")
-ALGORITHM = os.getenv("ALGORITHM")
-
-class TokenData(BaseModel):
-    username: str | None = None
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -42,12 +34,6 @@ class UserService:
             user_dict = self.db[username]
             return UserInDB(**user_dict)
 
-    def get_user_by_email(self, email: str):
-        for user in self.db.values():
-            if user['email'] == email:
-                return UserInDB(**user)
-        return None
-
     def get_all_users(self):
         return list(self.db.values())
 
@@ -57,11 +43,10 @@ class UserService:
 
     def process_google_login(self, user_info: dict):
 
-        user = self.get_user_by_email(user_info['email'])
+        user = self.get_user(user_info['email'])
         if not user:
             user = UserInDB(
                 username=user_info['email'],
-                email=user_info['email'],
                 full_name=user_info['name'],
                 given_name=user_info['given_name'],
                 family_name=user_info['family_name'],
