@@ -2,18 +2,22 @@ from datetime import datetime, timedelta, timezone
 from typing import Annotated
 
 import jwt
-from fastapi import Depends, FastAPI, HTTPException, status
+from fastapi import Depends, FastAPI, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jwt.exceptions import InvalidTokenError
 from passlib.context import CryptContext
 from pydantic import BaseModel
+import os
+from dotenv import load_dotenv
+load_dotenv()
 
-# to get a string like this run:
-# openssl rand -hex 32
-SECRET_KEY = "09d25e094faa6ca2556c818166b7a9563b93f7099f6f0f4caa6cf63b88e8d3e7"
-ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 30
+from starlette.middleware.sessions import SessionMiddleware
+from auth.google import router as auth_google_router
 
+
+SECRET_KEY = os.getenv("SECRET_KEY")
+ALGORITHM = os.getenv("ALGORITHM")
+ACCESS_TOKEN_EXPIRE_MINUTES = os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES")
 
 fake_users_db = {
     "johndoe": {
@@ -24,7 +28,6 @@ fake_users_db = {
         "disabled": False,
     }
 }
-
 
 class Token(BaseModel):
     access_token: str
@@ -50,8 +53,9 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
-app = FastAPI()
-
+app = FastAPI(prefix="/api")
+app.add_middleware(SessionMiddleware, secret_key=os.getenv("SECRET_KEY", "default_secret_key"))
+app.include_router(auth_google_router)
 
 def verify_password(plain_password, hashed_password):
     return pwd_context.verify(plain_password, hashed_password)
@@ -145,3 +149,25 @@ async def read_own_items(
     current_user: Annotated[User, Depends(get_current_active_user)],
 ):
     return [{"item_id": "Foo", "owner": current_user.username}]
+
+
+from fastapi.templating import Jinja2Templates
+templates = Jinja2Templates(directory="static/")
+
+@app.get("/")
+async def login(request: Request):
+    """
+    :param request: An instance of the `Request` class, representing the incoming HTTP request.
+    :return: A TemplateResponse object rendering the "login.html" template with the given request context.
+    """
+    return templates.TemplateResponse("pages/login.html", {"request": request})
+
+@app.get("/welcome")
+async def welcome(request: Request):
+    """
+    :param request: The incoming HTTP request containing session data.
+    :return: A TemplateResponse object that renders the welcome page with the user's name or 'Guest' if not found.
+    """
+    name = request.session.get('user_name', 'Guest')
+    context = {"request": request, "name": name}
+    return templates.TemplateResponse("pages/welcome.html", context)
