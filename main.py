@@ -6,7 +6,7 @@ import os
 from starlette.middleware.sessions import SessionMiddleware
 from utils.auth_google import auth_google_router
 from routes.users import users_router
-from utils.auth import auth_router
+from routes.auth import auth_router
 
 app = FastAPI(prefix="/api")
 
@@ -19,7 +19,6 @@ app.include_router(users_router)
 
 from fastapi.templating import Jinja2Templates
 templates = Jinja2Templates(directory="static/")
-
 
 @app.get("/")
 async def login(request: Request):

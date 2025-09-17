@@ -1,7 +1,10 @@
 from starlette.requests import Request
 from fastapi import APIRouter
 from authlib.integrations.starlette_client import OAuth
+from utils.auth import Token
 import os
+from services.users_services import UserService, get_user_service
+from fastapi import Depends
 
 
 auth_google_router = APIRouter(prefix="/auth/google")
@@ -22,8 +25,14 @@ async def login_via_google(request: Request):
     return await oauth.google.authorize_redirect(request, redirect_uri)
 
 @auth_google_router.get("/callback")
-async def callback_via_google(request: Request):
+async def callback_via_google(request: Request, user_service: UserService = Depends(get_user_service)):
     token = await oauth.google.authorize_access_token(request)
-    return token
+
+    print(token['userinfo'])
+
+    user_service.process_google_login(token)
+
+    return Token(access_token=token['access_token'], token_type="bearer")
+    # return token
     # user = token['userinfo']
     # return dict(user)

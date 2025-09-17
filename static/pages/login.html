@@ -87,9 +87,9 @@
 <body>
     <div class="container">
         <h2>Login</h2>
-        <form method="post" action="/auth/token">
-            <input type="text" placeholder="Username" required>
-            <input type="password" placeholder="Password" required>
+        <form method="post">
+            <input type="text" placeholder="Username" name="username" required>
+            <input type="password" placeholder="Password" name="password" required>
             <button type="submit">Login</button>
         </form>
         <div class="alternative-login">
@@ -100,4 +100,30 @@
         </button>
     </div>
 </body>
+
+<script>
+    document.querySelector('form').addEventListener('submit', async function(event) {
+        event.preventDefault();
+        const form = event.target;
+        const username = form.querySelector('input[name="username"]').value;
+        const password = form.querySelector('input[name="password"]').value;
+
+        const body = new URLSearchParams();
+        body.append('username', username);
+        body.append('password', password);
+
+        try {
+            const res = await fetch('/auth/token', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body
+            });
+            const data = await res.json();
+            window.location.href = '/welcome';
+        } catch (e) {
+            alert('Network error');
+        }
+    });
+</script>
+
 </html>
