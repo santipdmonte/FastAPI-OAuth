@@ -58,7 +58,6 @@ class UserService:
                 family_name=user_info['family_name'],
                 email_verified=user_info['email_verified'],
                 picture=user_info['picture'],
-                hashed_password='testing-password',
             )
             self.create_user(user)
         else:

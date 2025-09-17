@@ -11,7 +11,7 @@ class User(BaseModel):
     picture: str | None = None
 
 class UserInDB(User):
-    hashed_password: str
+    hashed_password: str | None = None
 
 class UserUpdate(BaseModel):
     full_name: str | None = None
