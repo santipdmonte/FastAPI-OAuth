@@ -4,9 +4,9 @@ load_dotenv()
 import os
 
 from starlette.middleware.sessions import SessionMiddleware
-from utils.auth_google import auth_google_router
-from routes.users import users_router
-from routes.auth import auth_router
+from utils.auth_google_utils import auth_google_router
+from routes.users_routes import users_router
+from routes.auth_routes import auth_router
 
 app = FastAPI(prefix="/api")
 
