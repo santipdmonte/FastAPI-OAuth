@@ -1,7 +1,7 @@
 from starlette.requests import Request
 from fastapi import APIRouter
 from authlib.integrations.starlette_client import OAuth
-from utils.auth_utils import Token, create_access_token
+from utils.auth_utils import TokenPair, create_access_token, create_refresh_token
 import os
 from services.users_services import UserService, get_user_service
 from fastapi import Depends, HTTPException
@@ -57,4 +57,5 @@ async def callback_via_google(request: Request, user_service: UserService = Depe
     access_token = create_access_token(
         data={"sub": user_info['email']}, expires_delta=access_token_expires
     )
-    return Token(access_token=access_token, token_type="bearer")
+    refresh_token = create_refresh_token(data={"sub": user_info['email']})
+    return TokenPair(access_token=access_token, refresh_token=refresh_token, token_type="bearer")
