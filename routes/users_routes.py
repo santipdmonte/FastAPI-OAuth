@@ -1,7 +1,7 @@
 from fastapi import Depends, APIRouter
 from typing import Annotated
 from utils.jwt_utils import get_current_active_user
-from schemas.users_schemas import User, UserUpdate, UserCreate
+from schemas.users_schemas import User, UserUpdate
 from services.users_services import UserService, get_user_service
 
 users_router = APIRouter(prefix="/users", tags=["users"])

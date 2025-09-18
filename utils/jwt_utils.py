@@ -10,7 +10,7 @@ import os
 from pydantic import BaseModel
 
 class TokenData(BaseModel):
-    username: str | None = None
+    email: str | None = None
 
 SECRET_KEY = os.getenv("SECRET_KEY")
 ALGORITHM = os.getenv("ALGORITHM")
@@ -29,8 +29,8 @@ def validate_email_verified_token(
     payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
     if payload.get("type") != "email_verified":
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
-    username = payload.get("sub")
-    user = user_service.get_user(username)
+    email = payload.get("sub")
+    user = user_service.get_user(email)
     if user is None:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
     return user
@@ -49,14 +49,14 @@ async def get_current_user(
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         if payload.get("type") != "access":
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
-        username = payload.get("sub")
-        if username is None:
+        email = payload.get("sub")
+        if email is None:
             raise credentials_exception
-        token_data = TokenData(username=username)
+        token_data = TokenData(email=email)
     except InvalidTokenError:
         raise credentials_exception
     
-    user = user_service.get_user(username=token_data.username)
+    user = user_service.get_user(email=token_data.email)
     if user is None:
         raise credentials_exception
     return user

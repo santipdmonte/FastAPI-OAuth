@@ -1,6 +1,4 @@
-from fastapi import FastAPI, Request
-from dotenv import load_dotenv
-load_dotenv()
+from fastapi import FastAPI
 import os
 
 from starlette.middleware.sessions import SessionMiddleware
@@ -8,6 +6,9 @@ from utils.auth_google_utils import auth_google_router
 from routes.users_routes import users_router
 from routes.auth_routes import auth_router
 from utils.email_utlis import email_router
+from database import create_db_and_tables
+
+create_db_and_tables()
 
 app = FastAPI(prefix="/api")
 
@@ -17,24 +18,3 @@ app.include_router(auth_google_router)
 app.include_router(auth_router)
 app.include_router(users_router)
 app.include_router(email_router)
-
-from fastapi.templating import Jinja2Templates
-templates = Jinja2Templates(directory="static/")
-
-@app.get("/")
-async def login(request: Request):
-    """
-    :param request: An instance of the `Request` class, representing the incoming HTTP request.
-    :return: A TemplateResponse object rendering the "login.html" template with the given request context.
-    """
-    return templates.TemplateResponse("pages/login.html", {"request": request})
-
-@app.get("/welcome")
-async def welcome(request: Request):
-    """
-    :param request: The incoming HTTP request containing session data.
-    :return: A TemplateResponse object that renders the welcome page with the user's name or 'Guest' if not found.
-    """
-    name = request.session.get('user_name', 'Guest')
-    context = {"request": request, "name": name}
-    return templates.TemplateResponse("pages/welcome.html", context)
