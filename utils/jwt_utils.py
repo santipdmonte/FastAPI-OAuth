@@ -17,7 +17,10 @@ ALGORITHM = os.getenv("ALGORITHM")
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
-def validate_email_verified_token(token: str, user_service: UserService = Depends(get_user_service)):
+def validate_email_verified_token(
+    token: Annotated[str, Depends(oauth2_scheme)], 
+    user_service: UserService = Depends(get_user_service)
+):
     payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
     if payload.get("type") != "email_verified":
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
@@ -29,7 +32,7 @@ def validate_email_verified_token(token: str, user_service: UserService = Depend
 
 async def get_current_user(
     token: Annotated[str, Depends(oauth2_scheme)], 
-    current_user: UserService = Depends(get_user_service)
+    user_service: UserService = Depends(get_user_service)
 ):
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
@@ -48,7 +51,7 @@ async def get_current_user(
     except InvalidTokenError:
         raise credentials_exception
     
-    user = current_user.get_user(username=token_data.username)
+    user = user_service.get_user(username=token_data.username)
     if user is None:
         raise credentials_exception
     return user
