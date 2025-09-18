@@ -81,7 +81,6 @@ class UserSocialAccount(Base):
     email: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     picture: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
     is_verified: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
-    verified_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
     
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), 
@@ -94,7 +93,11 @@ class UserSocialAccount(Base):
         onupdate=func.now(),
         nullable=False
     )
-    last_used: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
+    last_used: Mapped[Optional[datetime]] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        nullable=False
+    )
     
     user: Mapped["User"] = relationship("User", back_populates="social_accounts")
 
