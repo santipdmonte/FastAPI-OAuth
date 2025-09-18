@@ -112,7 +112,6 @@ class UserSocialAccount(Base):
     def mark_as_verified(self) -> None:
         """Marcar identidad como verificada."""
         self.is_verified = True
-        self.verified_at = datetime.now(timezone.utc)
 
     def update_last_used(self) -> None:
         """Actualizar último uso."""
