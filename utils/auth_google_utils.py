@@ -10,7 +10,7 @@ from datetime import timedelta
 
 ACCESS_TOKEN_EXPIRE_MINUTES = os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES")
 
-auth_google_router = APIRouter(prefix="/auth/google")
+auth_google_router = APIRouter(prefix="/auth/google", tags=["auth"])
 oauth = OAuth()
 oauth.register(
     name='google',

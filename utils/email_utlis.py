@@ -13,7 +13,7 @@ from services.users_services import get_user_service, UserService
 from fastapi import Depends
 
 
-email_router = APIRouter(prefix="/email")
+email_router = APIRouter(prefix="/auth/email")
 
 # Email settings (example with Gmail SMTP)
 SMTP_SERVER = os.getenv("SMTP_SERVER")
@@ -59,15 +59,3 @@ def generate_email_verified_token(user: User):
         data={"sub": user.username}, expires_delta=access_token_expires
     )
     return access_token
-
-
-@email_router.post("/send-code/")
-async def send_code(request: EmailRequest, background_tasks: BackgroundTasks, user_service: UserService = Depends(get_user_service)):
-    user = user_service.get_user(request.email)
-    if not user:
-        user =user_service.create_user_with_email(request.email)
-    token = generate_email_verified_token(user)
-
-    background_tasks.add_task(send_verification_email, request.email, token)
-
-    return {"message": "Verification code sent", "email": request.email}
