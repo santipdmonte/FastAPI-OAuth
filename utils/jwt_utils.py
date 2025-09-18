@@ -17,6 +17,16 @@ ALGORITHM = os.getenv("ALGORITHM")
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
+def validate_email_verified_token(token: str, user_service: UserService = Depends(get_user_service)):
+    payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+    if payload.get("type") != "email_verified":
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
+    username = payload.get("sub")
+    user = user_service.get_user(username)
+    if user is None:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
+    return user
+
 async def get_current_user(
     token: Annotated[str, Depends(oauth2_scheme)], 
     current_user: UserService = Depends(get_user_service)
@@ -28,6 +38,9 @@ async def get_current_user(
     )
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        # TODO: Descomentar y Testear
+        # if payload.get("type") != "access":
+        #     raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
         username = payload.get("sub")
         if username is None:
             raise credentials_exception

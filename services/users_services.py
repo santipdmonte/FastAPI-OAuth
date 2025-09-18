@@ -35,6 +35,14 @@ class UserService:
             hashed_password=self.get_password_hash(user.password),
         ).model_dump()
         return user
+
+    def create_user_with_email(self, email: str):
+        user = UserInDB(
+            username=email,
+            email_verified=False,
+        )
+        self.db[user.username] = user.model_dump()
+        return user
     
     def get_user(self, username: str):
         if username in self.db:
