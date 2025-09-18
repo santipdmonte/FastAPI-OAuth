@@ -1,11 +1,14 @@
 from starlette.requests import Request
 from fastapi import APIRouter
 from authlib.integrations.starlette_client import OAuth
-from utils.auth_utils import Token
+from utils.auth_utils import Token, create_access_token
 import os
 from services.users_services import UserService, get_user_service
-from fastapi import Depends
+from fastapi import Depends, HTTPException
+from authlib.integrations.starlette_client import OAuthError
+from datetime import timedelta
 
+ACCESS_TOKEN_EXPIRE_MINUTES = os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES")
 
 auth_google_router = APIRouter(prefix="/auth/google")
 oauth = OAuth()
@@ -26,8 +29,35 @@ async def login_via_google(request: Request):
 
 @auth_google_router.get("/callback")
 async def callback_via_google(request: Request, user_service: UserService = Depends(get_user_service)):
-    token = await oauth.google.authorize_access_token(request)
+    """
+    Callback function for Google OAuth
+    :param request: Request object
+    :param user_service: User service
 
+    Validate the request, get the google acces token (only validate login, we are not storing the google access token)
+    create a new app access token
+
+    :return: Token
+    """
+    try:
+        token = await oauth.google.authorize_access_token(request)
+    except OAuthError as e:
+        raise HTTPException(status_code=400, detail=f"OAuth error: {str(e)}")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")
+
+    if not token:
+        raise HTTPException(status_code=400, detail="No token returned from Google")
+    
     user_service.process_google_login(token['userinfo'])
 
-    return Token(access_token=token['access_token'], token_type="bearer")
+    # Create new app access token
+    user_info = token['userinfo']
+    access_token_expires = timedelta(minutes=int(ACCESS_TOKEN_EXPIRE_MINUTES))
+    access_token = create_access_token(
+        data={"sub": user_info['email']}, expires_delta=access_token_expires
+    )
+    print(user_info['email'])
+    print(access_token)
+
+    return Token(access_token=access_token, token_type="bearer")
