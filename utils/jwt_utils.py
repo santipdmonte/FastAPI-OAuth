@@ -1,6 +1,6 @@
 from fastapi import Depends, HTTPException
 from typing import Annotated
-from fastapi.security import OAuth2PasswordBearer
+from fastapi.security import OAuth2PasswordBearer, HTTPBearer, HTTPAuthorizationCredentials
 from services.users_services import UserService, get_user_service
 from schemas.users_schemas import User
 import jwt
@@ -17,8 +17,13 @@ ALGORITHM = os.getenv("ALGORITHM")
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
+bearer_scheme = HTTPBearer(
+    scheme_name="Bearer Token",
+    description="Enter your access token here"
+)
+
 def validate_email_verified_token(
-    token: Annotated[str, Depends(oauth2_scheme)], 
+    token: HTTPAuthorizationCredentials = Depends(bearer_scheme), 
     user_service: UserService = Depends(get_user_service)
 ):
     payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
@@ -31,7 +36,7 @@ def validate_email_verified_token(
     return user
 
 async def get_current_user(
-    token: Annotated[str, Depends(oauth2_scheme)], 
+    credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme),
     user_service: UserService = Depends(get_user_service)
 ):
     credentials_exception = HTTPException(
@@ -39,11 +44,11 @@ async def get_current_user(
         detail="Could not validate credentials",
         headers={"WWW-Authenticate": "Bearer"},
     )
+    token = credentials.credentials
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        # TODO: Descomentar y Testear
-        # if payload.get("type") != "access":
-        #     raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
+        if payload.get("type") != "access":
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
         username = payload.get("sub")
         if username is None:
             raise credentials_exception

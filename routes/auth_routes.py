@@ -10,14 +10,14 @@ from utils.jwt_utils import validate_email_verified_token
 
 ACCESS_TOKEN_EXPIRE_MINUTES = os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES")
 
-auth_router = APIRouter()
+auth_router = APIRouter(prefix="/auth")
 
-@auth_router.post("/token")
+@auth_router.post("/login")
 async def login_for_access_token(
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
+    user_service: UserService = Depends(get_user_service),
 ) -> Token:
 
-    user_service = get_user_service(get_db())
     user = user_service.authenticate_user(form_data.username, form_data.password)
     if not user:
         raise HTTPException(
@@ -38,7 +38,7 @@ async def login_for_access_token(
     return Token(access_token=access_token, token_type="bearer")
 
 
-@auth_router.get("/auth/email/verify-token/")
+@auth_router.get("/email/verify-token/")
 async def verify(token: str, user_service: UserService = Depends(get_user_service)):
     user = validate_email_verified_token(token, user_service)
     if not user:
