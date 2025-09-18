@@ -8,7 +8,7 @@ import os
 import certifi
 from datetime import timedelta
 from utils.auth_utils import create_email_verified_token
-from schemas.users_schemas import User
+from schemas.users_schemas import UserBase
 from services.users_services import get_user_service, UserService
 from fastapi import Depends
 
@@ -75,7 +75,7 @@ def send_verification_email(email: str, token: str):
         raise HTTPException(status_code=500, detail=f"Email failed: {str(e)}")
 
 
-def generate_email_verified_token(user: User):
+def generate_email_verified_token(user: UserBase):
     access_token_expires = timedelta(minutes=int(EMAIL_TOKEN_EXPIRE_MINUTES))
     access_token = create_email_verified_token(
         data={"sub": user.email}, expires_delta=access_token_expires

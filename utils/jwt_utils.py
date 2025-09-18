@@ -2,7 +2,7 @@ from fastapi import Depends, HTTPException
 from typing import Annotated
 from fastapi.security import OAuth2PasswordBearer, HTTPBearer, HTTPAuthorizationCredentials
 from services.users_services import UserService, get_user_service
-from schemas.users_schemas import User
+from schemas.users_schemas import UserBase
 import jwt
 from jwt.exceptions import InvalidTokenError
 from fastapi import status
@@ -62,7 +62,7 @@ async def get_current_user(
     return user
 
 async def get_current_active_user(
-    current_user: Annotated[User, Depends(get_current_user)],
+    current_user: Annotated[UserBase, Depends(get_current_user)],
 ):
     if current_user.disabled:
         raise HTTPException(status_code=400, detail="Inactive user")
