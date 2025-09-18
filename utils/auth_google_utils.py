@@ -8,7 +8,7 @@ from fastapi import Depends, HTTPException
 from authlib.integrations.starlette_client import OAuthError
 from datetime import timedelta
 
-ACCESS_TOKEN_EXPIRE_MINUTES = os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES")
+ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "60"))
 
 auth_google_router = APIRouter(prefix="/auth/google", tags=["auth"])
 oauth = OAuth()
@@ -53,11 +53,8 @@ async def callback_via_google(request: Request, user_service: UserService = Depe
 
     # Create new app access token
     user_info = token['userinfo']
-    access_token_expires = timedelta(minutes=int(ACCESS_TOKEN_EXPIRE_MINUTES))
+    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
         data={"sub": user_info['email']}, expires_delta=access_token_expires
     )
-    print(user_info['email'])
-    print(access_token)
-
     return Token(access_token=access_token, token_type="bearer")

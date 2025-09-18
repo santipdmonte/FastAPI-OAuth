@@ -1,4 +1,4 @@
-from fastapi import APIRouter, BackgroundTasks, HTTPException
+from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, EmailStr
 import smtplib
 from email.mime.text import MIMEText
@@ -44,7 +44,7 @@ def send_verification_email(email: str, token: str):
         # HTML body from template with link substitution
         try:
             base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-            template_path = os.path.join(base_dir, "static", "template", "magin-link.html")
+            template_path = os.path.join(base_dir, "static", "template", "magic-link.html")
             with open(template_path, "r", encoding="utf-8") as f:
                 html_template = f.read()
             html_body = html_template.replace("{{ link }}", verification_link)

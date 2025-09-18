@@ -7,7 +7,7 @@ from utils.jwt_utils import validate_email_verified_token
 from utils.email_utlis import generate_email_verified_token, send_verification_email, EmailRequest
 from models.users_models import User
 
-ACCESS_TOKEN_EXPIRE_MINUTES = os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES")
+ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "60"))
 
 auth_router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -35,7 +35,7 @@ async def verify_email_token(token: str, user_service: UserService = Depends(get
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    access_token_expires = timedelta(minutes=int(ACCESS_TOKEN_EXPIRE_MINUTES))
+    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
         data={"sub": user.email}, expires_delta=access_token_expires
     )

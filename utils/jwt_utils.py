@@ -1,6 +1,6 @@
 from fastapi import Depends, HTTPException
 from typing import Annotated
-from fastapi.security import OAuth2PasswordBearer, HTTPBearer, HTTPAuthorizationCredentials
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from services.users_services import UserService, get_user_service
 from schemas.users_schemas import UserBase
 import jwt
@@ -14,8 +14,6 @@ class TokenData(BaseModel):
 
 SECRET_KEY = os.getenv("SECRET_KEY")
 ALGORITHM = os.getenv("ALGORITHM")
-
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 bearer_scheme = HTTPBearer(
     scheme_name="Bearer Token",
