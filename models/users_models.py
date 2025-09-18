@@ -1,5 +1,5 @@
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
-from datetime import datetime
+from datetime import datetime, timezone
 from sqlalchemy import String, Boolean, Text, DateTime, func
 from typing import Optional
 from uuid import UUID
@@ -47,9 +47,9 @@ class User(Base):
         nullable=False
     )
 
-    identities: Mapped[list["UserIdentity"]] = relationship(
-        "UserIdentity", back_populates="user"
-    )
+    social_accounts: Mapped[list["UserSocialAccount"]] = relationship(
+        "UserSocialAccount", back_populates="user"
+    ) 
 
     def __repr__(self) -> str:
         """Representación legible del objeto."""
@@ -65,17 +65,21 @@ class User(Base):
         return not self.disabled
 
 
-class UserIdentity(Base):
+class UserSocialAccount(Base):
     """Identidades de autenticación de usuarios (emails, OAuth accounts)."""
     
-    __tablename__ = "user_identities"
+    __tablename__ = "user_social_accounts"
     
-    id: Mapped[int] = mapped_column(primary_key=True, index=True)
-    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid.uuid4, index=True, nullable=False)
+    user_id: Mapped[UUID] = mapped_column(ForeignKey("users.id"), nullable=False)
     
     provider: Mapped[AuthProviderType] = mapped_column(String(20), nullable=False)
     provider_id: Mapped[str] = mapped_column(String(255), nullable=False)
-    provider_data: Mapped[Optional[str]] = mapped_column(Text)
+    name: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    given_name: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    family_name: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    email: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    picture: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
     is_verified: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     verified_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
     
@@ -92,21 +96,21 @@ class UserIdentity(Base):
     )
     last_used: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
     
-    user: Mapped["User"] = relationship("User", back_populates="identities")
+    user: Mapped["User"] = relationship("User", back_populates="social_accounts")
 
     __table_args__ = (
-        UniqueConstraint("provider", "provider_id", name="uq_provider_identity"),
+        UniqueConstraint("provider", "provider_id", name="uq_provider_social_account"),
         Index("idx_provider_lookup", "provider", "provider_id"),
     )
 
     def __repr__(self) -> str:
-        return f"<UserIdentity(provider='{self.provider}', provider_id='{self.provider_id}')>"
+        return f"<UserSocialAccount(provider='{self.provider}', provider_id='{self.provider_id}')>"
 
     def mark_as_verified(self) -> None:
         """Marcar identidad como verificada."""
         self.is_verified = True
-        self.verified_at = datetime.utcnow()
+        self.verified_at = datetime.now(timezone.utc)
 
     def update_last_used(self) -> None:
         """Actualizar último uso."""
-        self.last_used = datetime.utcnow()
+        self.last_used = datetime.now(timezone.utc)

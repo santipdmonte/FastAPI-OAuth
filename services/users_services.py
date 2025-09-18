@@ -1,9 +1,9 @@
-from passlib.context import CryptContext
 from schemas.users_schemas import UserUpdate
 from fastapi import Depends
 from dependencies import get_db
-from models.users_models import User
+from models.users_models import User, UserSocialAccount
 from sqlalchemy.orm import Session
+from models.users_models import AuthProviderType
 
 class UserService:
     """Service class for user CRUD operations and business logic"""
@@ -13,14 +13,13 @@ class UserService:
 
     # ==================== USER METHODS ====================
 
-    def create_user(self, email: str):
+    def create_user(self, user: User):
 
-        exists_user = self.get_user(email)
+        exists_user = self.get_user(user.email)
         if exists_user:
             return exists_user
 
-        user = User(email=email)
-        user = self.db.add(user)
+        self.db.add(user)
         self.db.commit()
         return user
     
@@ -40,7 +39,21 @@ class UserService:
 
         return user
 
+    def get_user_social_accounts(self, user_id: str):
+        return self.db.query(UserSocialAccount).filter(UserSocialAccount.user_id == user_id).all()
+
+    def get_user_social_account(self, provider_id: str):
+        return self.db.query(UserSocialAccount).filter(UserSocialAccount.provider_id == provider_id).first()
+
+    def _create_user_social_account(self, user_social_account: UserSocialAccount):
+        self.db.add(user_social_account)
+        self.db.commit()
+        self.db.refresh(user_social_account)
+        return user_social_account
+
     def process_google_login(self, user_info: dict):
+
+        print(user_info)
 
         user = self.get_user(user_info['email'])
         if not user:
@@ -60,6 +73,26 @@ class UserService:
                 picture=user.picture or user_info['picture'],
             )
             self.update_user(user, user_update)
+
+        user_social_account = self.get_user_social_account(user_info['sub'])
+        if not user_social_account:
+            user_social_account = UserSocialAccount(
+                user_id=user.id,
+                provider=AuthProviderType.GOOGLE,
+                provider_id=user_info['sub'],
+                email=user_info['email'],
+                is_verified=user_info['email_verified'],
+                name=user_info['name'],
+                given_name=user_info['given_name'],
+                family_name=user_info['family_name'],
+                picture=user_info['picture'],
+            )
+            self._create_user_social_account(user_social_account)
+            
+        else:
+            user_social_account.update_last_used()
+            self.db.commit()
+
         return user
 
 # ==================== DEPENDENCY INJECTION ====================

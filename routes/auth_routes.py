@@ -5,6 +5,7 @@ from datetime import timedelta
 import os
 from utils.jwt_utils import validate_email_verified_token
 from utils.email_utlis import generate_email_verified_token, send_verification_email, EmailRequest
+from models.users_models import User
 
 ACCESS_TOKEN_EXPIRE_MINUTES = os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES")
 
@@ -15,7 +16,8 @@ auth_router = APIRouter(prefix="/auth", tags=["auth"])
 async def send_token(request: EmailRequest, background_tasks: BackgroundTasks, user_service: UserService = Depends(get_user_service)):
     user = user_service.get_user(request.email)
     if not user:
-        user = user_service.create_user(request.email)
+        user = User(email=request.email)
+        user = user_service.create_user(user)
     token = generate_email_verified_token(user)
 
     background_tasks.add_task(send_verification_email, request.email, token)
