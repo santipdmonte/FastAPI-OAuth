@@ -77,7 +77,7 @@ def send_verification_email(email: str, token: str):
 
 def generate_email_verified_token(user: UserBase):
     access_token_expires = timedelta(minutes=int(EMAIL_TOKEN_EXPIRE_MINUTES))
-    access_token, access_jti, access_exp = create_email_verified_token(
+    access_token = create_email_verified_token(
         data={"sub": user.email}, expires_delta=access_token_expires
     )
     return access_token
