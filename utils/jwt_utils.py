@@ -9,6 +9,7 @@ from jwt.exceptions import InvalidTokenError
 from fastapi import status
 import os
 from pydantic import BaseModel
+from models.users_models import UserRole
 
 class TokenData(BaseModel):
     email: str | None = None
@@ -29,7 +30,7 @@ def validate_email_verified_token(
     if payload.get("type") != "email_verified":
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
     email = payload.get("sub")
-    user = user_service.get_user(email)
+    user = user_service.get_user_by_email(email)
     if user is None:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
     return user
@@ -50,7 +51,7 @@ async def get_current_user(
     except InvalidTokenError:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
     
-    user = user_service.get_user(email=token_data.email)
+    user = user_service.get_user_by_email(email=token_data.email)
     if user is None:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token subject")
     return user
@@ -62,6 +63,12 @@ async def get_current_active_user(
         raise HTTPException(status_code=400, detail="Inactive user")
     return current_user
 
+async def get_current_active_admin_user(
+    current_user: Annotated[UserBase, Depends(get_current_user)],
+):
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin user required")
+    return current_user
 
 def validate_refresh_token(
     refresh_token: str,

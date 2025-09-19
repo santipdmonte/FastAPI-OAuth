@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 from datetime import datetime
-from models.users_models import AuthProviderType
+from models.users_models import AuthProviderType, UserRole
 
 class UserBase(BaseModel):
     email: str
@@ -9,6 +9,7 @@ class UserBase(BaseModel):
     family_name: str | None = None
     disabled: bool = False
     picture: str | None = None
+    role: UserRole | None = None
 
 class UserUpdate(BaseModel):
     full_name: str | None = None

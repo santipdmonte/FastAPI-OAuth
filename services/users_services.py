@@ -1,9 +1,10 @@
 from schemas.users_schemas import UserUpdate
 from fastapi import Depends
 from dependencies import get_db
-from models.users_models import User, UserSocialAccount
+from models.users_models import User, UserRole, UserSocialAccount
 from sqlalchemy.orm import Session
 from models.users_models import AuthProviderType
+from uuid import UUID
 
 class UserService:
     """Service class for user CRUD operations and business logic"""
@@ -15,15 +16,18 @@ class UserService:
 
     def create_user(self, user: User):
 
-        exists_user = self.get_user(user.email)
+        exists_user = self.get_user_by_email(user.email)
         if exists_user:
             return exists_user
 
         self.db.add(user)
         self.db.commit()
         return user
+
+    def get_user(self, user_id: str):
+        return self.db.query(User).filter(User.id == UUID(user_id)).first()
     
-    def get_user(self, email: str):
+    def get_user_by_email(self, email: str):
         return self.db.query(User).filter(User.email == email).first()
 
     def get_all_users(self):
@@ -45,6 +49,12 @@ class UserService:
     def get_user_social_account(self, provider_id: str):
         return self.db.query(UserSocialAccount).filter(UserSocialAccount.provider_id == provider_id).first()
 
+    def make_user_admin(self, user: User):
+        user.role = UserRole.ADMIN
+        self.db.commit()
+        self.db.refresh(user)
+        return user
+
     def _create_user_social_account(self, user_social_account: UserSocialAccount):
         self.db.add(user_social_account)
         self.db.commit()
@@ -55,7 +65,7 @@ class UserService:
 
         print(user_info)
 
-        user = self.get_user(user_info['email'])
+        user = self.get_user_by_email(user_info['email'])
         if not user:
             user = User(
                 email=user_info['email'],

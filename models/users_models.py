@@ -14,6 +14,11 @@ class AuthProviderType(str, Enum):
     GOOGLE = "google"
     # ... More providers can be added here
 
+class UserRole(str, Enum):
+    """Roles de usuario."""
+    USER = "user"
+    ADMIN = "admin"
+
 class Base(DeclarativeBase):
     pass
 
@@ -35,6 +40,7 @@ class User(Base):
     family_name: Mapped[str] = mapped_column(String(100), nullable=True)
     picture: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
     disabled: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    role: Mapped[UserRole] = mapped_column(String(20), default=UserRole.USER, nullable=False)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), 
         server_default=func.now(),

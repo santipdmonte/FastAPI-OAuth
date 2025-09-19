@@ -19,7 +19,7 @@ auth_router = APIRouter(prefix="/auth", tags=["auth"])
 
 @auth_router.post("/login")
 async def send_token(request: EmailRequest, background_tasks: BackgroundTasks, user_service: UserService = Depends(get_user_service)):
-    user = user_service.get_user(request.email)
+    user = user_service.get_user_by_email(request.email)
     if not user:
         user = User(email=request.email)
         user = user_service.create_user(user)
@@ -59,7 +59,7 @@ async def refresh_tokens(
     payload = validate_refresh_token(refresh_token, token_service)
     email = payload["email"]
     old_jti = payload["jti"]
-    user = user_service.get_user(email)
+    user = user_service.get_user_by_email(email)
     if not user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token subject")
 
@@ -97,7 +97,7 @@ async def logout(
     except Exception:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid access token")
 
-    user = user_service.get_user(email)
+    user = user_service.get_user_by_email(email)
     if not user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token subject")
 
