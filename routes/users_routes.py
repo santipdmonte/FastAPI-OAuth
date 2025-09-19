@@ -13,7 +13,7 @@ async def get_all_users(
 ):
     return user_service.get_all_users()
 
-@users_router.patch("/admin/{user_id}")
+@users_router.patch("/{user_id}/admin")
 async def make_user_admin(
     user_id: str,
     user_service: UserService = Depends(get_user_service),
