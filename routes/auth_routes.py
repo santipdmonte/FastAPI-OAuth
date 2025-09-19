@@ -1,10 +1,12 @@
 from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks
 from datetime import datetime, timedelta
+from starlette.requests import Request
+from authlib.integrations.starlette_client import OAuthError
 import os
 
 from utils.email_utlis import generate_email_verified_token, send_verification_email, EmailRequest
 from utils.auth_utils import TokenPair, create_access_token, create_refresh_token, bearer_scheme, validate_refresh_token, validate_access_token, validate_email_verified_token
-
+from utils.auth_google_utils import oauth_google_authorize_redirect, oauth_google_authorize_access_token
 from services.tokens_service import get_token_service, TokenService
 from services.users_services import get_user_service, UserService
 from fastapi.security import HTTPAuthorizationCredentials
@@ -15,6 +17,7 @@ ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "60")
 
 auth_router = APIRouter(prefix="/auth", tags=["auth"])
 
+# ==================== EMAIL AUTHENTICATION ====================
 
 @auth_router.post("/login")
 async def send_token(request: EmailRequest, background_tasks: BackgroundTasks, user_service: UserService = Depends(get_user_service)):
@@ -113,3 +116,36 @@ async def logout(
             )
 
     return {"message": "Logged out"}
+
+# ==================== GOOGLE AUTHENTICATION ====================
+
+@auth_router.get("/google/login")
+async def login_via_google(request: Request):
+    redirect_uri = request.url_for('callback_via_google')
+    return await oauth_google_authorize_redirect(request, redirect_uri)
+
+@auth_router.get("/google/callback")
+async def callback_via_google(request: Request, user_service: UserService = Depends(get_user_service)):
+    """
+    Callback function for Google OAuth
+    :param request: Request object
+    :param user_service: User service
+
+    Validate the request, get the google acces token (only validate login, we are not storing the google access token)
+    create a new app access token
+
+    :return: Token
+    """
+    try:
+        token = await oauth_google_authorize_access_token(request)
+    except OAuthError as e:
+        raise HTTPException(status_code=400, detail=f"OAuth error: {str(e)}")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")
+
+    if not token:
+        raise HTTPException(status_code=400, detail="No token returned from Google")
+    
+    access_token, refresh_token = user_service.process_google_login(token['userinfo'])
+
+    return TokenPair(access_token=access_token, refresh_token=refresh_token, token_type="bearer")

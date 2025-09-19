@@ -10,7 +10,6 @@ from datetime import timedelta
 
 ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "60"))
 
-auth_google_router = APIRouter(prefix="/auth/google", tags=["auth"])
 oauth = OAuth()
 oauth.register(
     name='google',
@@ -22,40 +21,8 @@ oauth.register(
     },
 )
 
-@auth_google_router.get("/login")
-async def login_via_google(request: Request):
-    redirect_uri = request.url_for('callback_via_google')
+async def oauth_google_authorize_redirect(request: Request, redirect_uri: str):
     return await oauth.google.authorize_redirect(request, redirect_uri)
 
-@auth_google_router.get("/callback")
-async def callback_via_google(request: Request, user_service: UserService = Depends(get_user_service)):
-    """
-    Callback function for Google OAuth
-    :param request: Request object
-    :param user_service: User service
-
-    Validate the request, get the google acces token (only validate login, we are not storing the google access token)
-    create a new app access token
-
-    :return: Token
-    """
-    try:
-        token = await oauth.google.authorize_access_token(request)
-    except OAuthError as e:
-        raise HTTPException(status_code=400, detail=f"OAuth error: {str(e)}")
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")
-
-    if not token:
-        raise HTTPException(status_code=400, detail="No token returned from Google")
-    
-    user_service.process_google_login(token['userinfo'])
-
-    # Create new app access token
-    user_info = token['userinfo']
-    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    access_token = create_access_token(
-        data={"sub": user_info['email']}, expires_delta=access_token_expires
-    )
-    refresh_token = create_refresh_token(data={"sub": user_info['email']})
-    return TokenPair(access_token=access_token, refresh_token=refresh_token, token_type="bearer")
+async def oauth_google_authorize_access_token(request: Request):
+    return await oauth.google.authorize_access_token(request)

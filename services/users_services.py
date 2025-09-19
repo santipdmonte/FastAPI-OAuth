@@ -5,6 +5,14 @@ from models.users_models import User, UserRole, UserSocialAccount
 from sqlalchemy.orm import Session
 from models.users_models import AuthProviderType
 from uuid import UUID
+from utils.auth_utils import create_access_token, create_refresh_token
+from datetime import timedelta
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
+ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "60"))
 
 class UserService:
     """Service class for user CRUD operations and business logic"""
@@ -68,8 +76,6 @@ class UserService:
 
     def process_google_login(self, user_info: dict):
 
-        print(user_info)
-
         user = self.get_user_by_email(user_info['email'])
         if not user:
             user = User(
@@ -108,7 +114,14 @@ class UserService:
             user_social_account.update_last_used()
             self.db.commit()
 
-        return user
+
+        # Create new app access token
+        access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+        access_token = create_access_token(
+            data={"sub": user_info['email']}, expires_delta=access_token_expires
+        )
+        refresh_token = create_refresh_token(data={"sub": user_info['email']})
+        return access_token, refresh_token
 
 # ==================== DEPENDENCY INJECTION ====================
 
