@@ -1,40 +1,47 @@
 from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks
-from datetime import datetime, timedelta
+from datetime import datetime
 from starlette.requests import Request
 from authlib.integrations.starlette_client import OAuthError
 import os
 
-from utils.email_utlis import generate_email_verified_token, send_verification_email, EmailRequest
-from utils.auth_utils import TokenPair, create_access_token, create_refresh_token, bearer_scheme, validate_refresh_token, validate_access_token, validate_email_verified_token
+from utils.email_utlis import send_verification_email, EmailRequest
 from utils.auth_google_utils import oauth_google_authorize_redirect, oauth_google_authorize_access_token
-from services.tokens_service import get_token_service, TokenService
+from services.tokens_service import (
+    get_token_service,
+    TokenService,
+    TokenPair,
+    bearer_scheme,
+)
 from services.users_services import get_user_service, UserService
 from fastapi.security import HTTPAuthorizationCredentials
 from models.token_models import TokenType
 from models.users_models import User
-
-ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "60"))
 
 auth_router = APIRouter(prefix="/auth", tags=["auth"])
 
 # ==================== EMAIL AUTHENTICATION ====================
 
 @auth_router.post("/login")
-async def send_token(request: EmailRequest, background_tasks: BackgroundTasks, user_service: UserService = Depends(get_user_service)):
+async def send_token(
+    request: EmailRequest,
+    background_tasks: BackgroundTasks,
+    user_service: UserService = Depends(get_user_service),
+    token_service: TokenService = Depends(get_token_service),
+):
     user = user_service.get_user_by_email(request.email)
     if not user:
         user = User(email=request.email)
         user = user_service.create_user(user)
-    token = generate_email_verified_token(user)
 
+    token = token_service.create_email_verification_token(data={"sub": user.email})
     background_tasks.add_task(send_verification_email, request.email, token)
 
     return {"message": "Verification code sent", "email": request.email}
 
 
 @auth_router.get("/verify-token/")
-async def verify_email_token(token: str):
-    payload = validate_email_verified_token(token)
+async def verify_email_token(token: str, token_service: TokenService = Depends(get_token_service)):
+    payload = token_service.validate_email_verified_token(token)
     if not payload:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -43,12 +50,9 @@ async def verify_email_token(token: str):
         )
 
     email = payload.get("sub")
-    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     data = {"sub": email}
-    access_token = create_access_token(
-        data=data, expires_delta=access_token_expires
-    )
-    refresh_token = create_refresh_token(data=data)
+    access_token = token_service.create_access_token(data=data)
+    refresh_token = token_service.create_refresh_token(data=data)
     return TokenPair(access_token=access_token, refresh_token=refresh_token, token_type="bearer")
 
 
@@ -59,7 +63,7 @@ async def refresh_tokens(
     token_service: TokenService = Depends(get_token_service),
 ):
 
-    payload = validate_refresh_token(refresh_token, token_service)
+    payload = token_service.validate_refresh_token(refresh_token)
     email = payload.get("sub")
     old_jti = payload["jti"]
     user = user_service.get_user_by_email(email)
@@ -75,11 +79,8 @@ async def refresh_tokens(
         reason="rotated",
     )
 
-    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    access_token = create_access_token(
-        data={"sub": user.email}, expires_delta=access_token_expires
-    )
-    new_refresh_token = create_refresh_token(data={"sub": user.email})
+    access_token = token_service.create_access_token(data={"sub": user.email})
+    new_refresh_token = token_service.create_refresh_token(data={"sub": user.email})
 
     return TokenPair(access_token=access_token, refresh_token=new_refresh_token, token_type="bearer")
 
@@ -93,7 +94,7 @@ async def logout(
 ):
     access_token = credentials.credentials
     try:
-        token_data = validate_access_token(access_token)
+        token_data = token_service.validate_access_token(access_token)
         email = token_data.get("sub")
     except Exception:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid access token")
@@ -103,7 +104,7 @@ async def logout(
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token subject")
 
     if refresh_token:
-        payload_r = validate_refresh_token(refresh_token, token_service)
+        payload_r = token_service.validate_refresh_token(refresh_token)
         r_jti = payload_r.get("jti")
         r_exp = payload_r.get("exp")
         if r_jti:

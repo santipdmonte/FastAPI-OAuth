@@ -1,6 +1,6 @@
 from fastapi import Depends, HTTPException
 from fastapi.security import HTTPAuthorizationCredentials
-from utils.auth_utils import validate_access_token, bearer_scheme
+from services.tokens_service import bearer_scheme, get_token_service, TokenService
 from services.users_services import UserService, get_user_service
 from models.users_models import User, UserRole
 from typing import Annotated
@@ -12,7 +12,8 @@ async def get_current_user(
     user_service: UserService = Depends(get_user_service)
 ):
     token = credentials.credentials
-    token_data = validate_access_token(token)
+    token_service: TokenService = get_token_service()
+    token_data = token_service.validate_access_token(token)
     email = token_data.get("sub")
     
     user = user_service.get_user_by_email(email=email)

@@ -5,7 +5,7 @@ from models.users_models import User, UserRole, UserSocialAccount
 from sqlalchemy.orm import Session
 from models.users_models import AuthProviderType
 from uuid import UUID
-from utils.auth_utils import create_access_token, create_refresh_token
+from services.tokens_service import get_token_service, TokenService
 from datetime import timedelta
 import os
 from dotenv import load_dotenv
@@ -19,6 +19,7 @@ class UserService:
     
     def __init__(self, db: Depends(get_db)):
         self.db = db
+        self.token_service: TokenService = get_token_service(db)
 
     # ==================== USER METHODS ====================
 
@@ -117,10 +118,10 @@ class UserService:
 
         # Create new app access token
         access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-        access_token = create_access_token(
+        access_token = self.token_service.create_access_token(
             data={"sub": user_info['email']}, expires_delta=access_token_expires
         )
-        refresh_token = create_refresh_token(data={"sub": user_info['email']})
+        refresh_token = self.token_service.create_refresh_token(data={"sub": user_info['email']})
         return access_token, refresh_token
 
 # ==================== DEPENDENCY INJECTION ====================
