@@ -13,6 +13,16 @@ async def get_all_users(
 ):
     return user_service.get_all_users()
 
+@users_router.get("/{user_id}")
+async def get_user(
+    user_id: str,
+    user_service: UserService = Depends(get_user_service),
+):
+    user = user_service.get_user(user_id)
+    if user is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+    return user
+
 @users_router.patch("/{user_id}/admin")
 async def make_user_admin(
     user_id: str,
