@@ -1,6 +1,6 @@
 from schemas.users_schemas import UserUpdate
 from fastapi import Depends
-from dependencies import get_db
+from database import get_db
 from models.users_models import User, UserRole, UserSocialAccount
 from sqlalchemy.orm import Session
 from models.users_models import AuthProviderType

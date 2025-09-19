@@ -1,6 +1,6 @@
 from fastapi import Depends, APIRouter, HTTPException, status
 from typing import Annotated
-from utils.jwt_utils import get_current_active_user, get_current_active_admin_user
+from dependencies import get_current_active_user, get_current_active_admin_user
 from schemas.users_schemas import UserUpdate, UserResponse, UserSocialAccountBase
 from services.users_services import UserService, get_user_service
 from uuid import UUID

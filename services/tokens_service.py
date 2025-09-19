@@ -5,7 +5,7 @@ from uuid import UUID
 from fastapi import Depends
 from sqlalchemy.orm import Session
 
-from dependencies import get_db
+from database import get_db
 from models.token_models import TokenBlocklist, TokenType
 
 

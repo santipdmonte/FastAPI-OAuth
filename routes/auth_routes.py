@@ -32,8 +32,8 @@ async def send_token(request: EmailRequest, background_tasks: BackgroundTasks, u
 
 @auth_router.get("/verify-token/")
 async def verify_email_token(token: str, user_service: UserService = Depends(get_user_service)):
-    user = validate_email_verified_token(token, user_service)
-    if not user:
+    payload = validate_email_verified_token(token, user_service)
+    if not payload:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid token",
@@ -41,7 +41,7 @@ async def verify_email_token(token: str, user_service: UserService = Depends(get
         )
 
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    data = {"sub": user.email}
+    data = {"sub": payload.email}
     access_token = create_access_token(
         data=data, expires_delta=access_token_expires
     )
@@ -90,10 +90,8 @@ async def logout(
 ):
     access_token = credentials.credentials
     try:
-        payload = validate_access_token(access_token)
-        jti = payload.get("jti")
-        email = payload.get("sub")
-        exp = payload.get("exp")
+        token_data = validate_access_token(access_token)
+        email = token_data.get("sub")
     except Exception:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid access token")
 
