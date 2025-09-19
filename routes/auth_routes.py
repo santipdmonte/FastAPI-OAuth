@@ -4,7 +4,7 @@ from starlette.requests import Request
 from authlib.integrations.starlette_client import OAuthError
 import os
 
-from utils.email_utlis import send_verification_email, EmailRequest
+from utils.email_utlis import send_verification_email
 from utils.auth_google_utils import oauth_google_authorize_redirect, oauth_google_authorize_access_token
 from services.tokens_service import (
     get_token_service,
@@ -23,20 +23,20 @@ auth_router = APIRouter(prefix="/auth", tags=["auth"])
 
 @auth_router.post("/login")
 async def send_token(
-    request: EmailRequest,
+    email: str,
     background_tasks: BackgroundTasks,
     user_service: UserService = Depends(get_user_service),
     token_service: TokenService = Depends(get_token_service),
 ):
-    user = user_service.get_user_by_email(request.email)
+    user = user_service.get_user_by_email(email)
     if not user:
-        user = User(email=request.email)
+        user = User(email=email)
         user = user_service.create_user(user)
 
     token = token_service.create_email_verification_token(data={"sub": user.email})
-    background_tasks.add_task(send_verification_email, request.email, token)
+    background_tasks.add_task(send_verification_email, email, token)
 
-    return {"message": "Verification code sent", "email": request.email}
+    return {"message": "Verification code sent", "email": email}
 
 
 @auth_router.get("/verify-token/")

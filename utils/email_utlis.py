@@ -19,9 +19,6 @@ SMTP_REPLY_TO = os.getenv("SMTP_REPLY_TO")
 EMAIL_TOKEN_EXPIRE_MINUTES = int(os.getenv("EMAIL_TOKEN_EXPIRE_MINUTES"))
 URL = os.getenv("URL")
 
-class EmailRequest(BaseModel):
-    email: EmailStr
-
 def send_verification_email(email: str, token: str):
     try:
         # Create the email content (plain + HTML alternative)
