@@ -30,7 +30,7 @@ async def send_token(request: EmailRequest, background_tasks: BackgroundTasks, u
     return {"message": "Verification code sent", "email": request.email}
 
 
-@auth_router.get("/email/verify-token/")
+@auth_router.get("/verify-token/")
 async def verify_email_token(token: str, user_service: UserService = Depends(get_user_service)):
     user = validate_email_verified_token(token, user_service)
     if not user:
