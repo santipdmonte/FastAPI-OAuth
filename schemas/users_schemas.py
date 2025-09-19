@@ -1,6 +1,7 @@
 from pydantic import BaseModel
 from datetime import datetime
 from models.users_models import AuthProviderType, UserRole
+from uuid import UUID
 
 class UserBase(BaseModel):
     email: str
@@ -17,9 +18,8 @@ class UserUpdate(BaseModel):
     family_name: str | None = None
     picture: str | None = None
 
-
 class UserSocialAccountBase(BaseModel):
-    user_id: str
+    user_id: UUID
     provider: AuthProviderType
     provider_id: str
     is_verified: bool | None = None
@@ -28,3 +28,9 @@ class UserSocialAccountBase(BaseModel):
     family_name: str | None = None
     email: str | None = None
     picture: str | None = None
+
+class UserResponse(UserBase):
+    id: UUID
+    created_at: datetime
+    updated_at: datetime
+    social_accounts: list[UserSocialAccountBase] | None = None

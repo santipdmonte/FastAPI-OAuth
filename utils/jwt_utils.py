@@ -3,13 +3,12 @@ from typing import Annotated
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from services.users_services import UserService, get_user_service
 from services.tokens_service import TokenService, get_token_service
-from schemas.users_schemas import UserBase
 import jwt
 from jwt.exceptions import InvalidTokenError
 from fastapi import status
 import os
 from pydantic import BaseModel
-from models.users_models import UserRole
+from models.users_models import UserRole, User
 
 class TokenData(BaseModel):
     email: str | None = None
@@ -57,14 +56,14 @@ async def get_current_user(
     return user
 
 async def get_current_active_user(
-    current_user: Annotated[UserBase, Depends(get_current_user)],
+    current_user: Annotated[User, Depends(get_current_user)],
 ):
     if current_user.disabled:
         raise HTTPException(status_code=400, detail="Inactive user")
     return current_user
 
 async def get_current_active_admin_user(
-    current_user: Annotated[UserBase, Depends(get_current_user)],
+    current_user: Annotated[User, Depends(get_current_user)],
 ):
     if current_user.role != UserRole.ADMIN:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin user required")

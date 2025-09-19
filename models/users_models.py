@@ -54,7 +54,10 @@ class User(Base):
     )
 
     social_accounts: Mapped[list["UserSocialAccount"]] = relationship(
-        "UserSocialAccount", back_populates="user"
+        "UserSocialAccount",
+        back_populates="user",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
     ) 
 
     def __repr__(self) -> str:
@@ -77,7 +80,7 @@ class UserSocialAccount(Base):
     __tablename__ = "user_social_accounts"
     
     id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid.uuid4, index=True, nullable=False)
-    user_id: Mapped[UUID] = mapped_column(ForeignKey("users.id"), nullable=False)
+    user_id: Mapped[UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     
     provider: Mapped[AuthProviderType] = mapped_column(String(20), nullable=False)
     provider_id: Mapped[str] = mapped_column(String(255), nullable=False)

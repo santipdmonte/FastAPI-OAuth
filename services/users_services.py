@@ -24,8 +24,8 @@ class UserService:
         self.db.commit()
         return user
 
-    def get_user(self, user_id: str):
-        return self.db.query(User).filter(User.id == UUID(user_id)).first()
+    def get_user(self, user_id: UUID):
+        return self.db.query(User).filter(User.id == user_id).first()
     
     def get_user_by_email(self, email: str):
         return self.db.query(User).filter(User.email == email).first()
@@ -43,8 +43,13 @@ class UserService:
 
         return user
 
-    def get_user_social_accounts(self, user_id: str):
-        return self.db.query(UserSocialAccount).filter(UserSocialAccount.user_id == user_id).all()
+    def delete_user(self, user: User):
+        self.db.delete(user)
+        self.db.commit()
+        return user
+
+    def get_user_social_accounts(self, user: User):
+        return user.social_accounts
 
     def get_user_social_account(self, provider_id: str):
         return self.db.query(UserSocialAccount).filter(UserSocialAccount.provider_id == provider_id).first()
