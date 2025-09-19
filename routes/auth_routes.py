@@ -31,8 +31,8 @@ async def send_token(request: EmailRequest, background_tasks: BackgroundTasks, u
 
 
 @auth_router.get("/verify-token/")
-async def verify_email_token(token: str, user_service: UserService = Depends(get_user_service)):
-    payload = validate_email_verified_token(token, user_service)
+async def verify_email_token(token: str):
+    payload = validate_email_verified_token(token)
     if not payload:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -40,8 +40,9 @@ async def verify_email_token(token: str, user_service: UserService = Depends(get
             headers={"WWW-Authenticate": "Bearer"},
         )
 
+    email = payload.get("sub")
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    data = {"sub": payload.email}
+    data = {"sub": email}
     access_token = create_access_token(
         data=data, expires_delta=access_token_expires
     )
@@ -57,7 +58,7 @@ async def refresh_tokens(
 ):
 
     payload = validate_refresh_token(refresh_token, token_service)
-    email = payload["email"]
+    email = payload.get("sub")
     old_jti = payload["jti"]
     user = user_service.get_user_by_email(email)
     if not user:

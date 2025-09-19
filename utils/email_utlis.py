@@ -36,7 +36,7 @@ def send_verification_email(email: str, token: str):
         message["Subject"] = f"Welcome! Click the button to login"
         message["Reply-To"] = SMTP_REPLY_TO
 
-        verification_link = f"{URL}/auth/email/verify-token/?token={token}"
+        verification_link = f"{URL}/auth/verify-token/?token={token}"
 
         # Plain text fallback
         plain_text_body = verification_link
