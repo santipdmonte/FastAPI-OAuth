@@ -2,9 +2,8 @@ from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks
 from datetime import datetime, timedelta
 import os
 
-from utils.jwt_utils import bearer_scheme, validate_refresh_token, validate_access_token, validate_email_verified_token
 from utils.email_utlis import generate_email_verified_token, send_verification_email, EmailRequest
-from utils.auth_utils import TokenPair, create_access_token, create_refresh_token
+from utils.auth_utils import TokenPair, create_access_token, create_refresh_token, bearer_scheme, validate_refresh_token, validate_access_token, validate_email_verified_token
 
 from services.tokens_service import get_token_service, TokenService
 from services.users_services import get_user_service, UserService

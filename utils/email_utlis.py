@@ -21,7 +21,7 @@ SMTP_PORT = os.getenv("SMTP_PORT")
 SMTP_USER = os.getenv("SMTP_USER")
 SMTP_PASSWORD = os.getenv("SMTP_PASSWORD")
 SMTP_REPLY_TO = os.getenv("SMTP_REPLY_TO")
-EMAIL_TOKEN_EXPIRE_MINUTES = os.getenv("EMAIL_TOKEN_EXPIRE_MINUTES")
+EMAIL_TOKEN_EXPIRE_MINUTES = int(os.getenv("EMAIL_TOKEN_EXPIRE_MINUTES"))
 URL = os.getenv("URL")
 
 class EmailRequest(BaseModel):
@@ -76,7 +76,7 @@ def send_verification_email(email: str, token: str):
 
 
 def generate_email_verified_token(user: UserBase):
-    access_token_expires = timedelta(minutes=int(EMAIL_TOKEN_EXPIRE_MINUTES))
+    access_token_expires = timedelta(minutes=EMAIL_TOKEN_EXPIRE_MINUTES)
     access_token = create_email_verified_token(
         data={"sub": user.email}, expires_delta=access_token_expires
     )

@@ -1,10 +1,9 @@
 from fastapi import Depends, HTTPException
 from fastapi.security import HTTPAuthorizationCredentials
-from utils.jwt_utils import validate_access_token
+from utils.auth_utils import validate_access_token, bearer_scheme
 from services.users_services import UserService, get_user_service
 from models.users_models import User, UserRole
 from typing import Annotated
-from utils.jwt_utils import bearer_scheme
 from fastapi import status
 
 
